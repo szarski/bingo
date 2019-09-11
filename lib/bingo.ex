@@ -1,18 +1,7 @@
 defmodule Bingo do
-  @moduledoc """
-  Documentation for Bingo.
-  """
+  require Application
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Bingo.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def start(_, _) do
+    Game.start_link()
   end
 end
