@@ -17,4 +17,25 @@ defmodule Board do
 
     "\n  B   I   N   G   O\n#{str}"
   end
+
+  def bingo?(board, numbers) do
+    hits =
+      board
+      |> Enum.map(fn row ->
+        row
+        |> Enum.map(fn cell ->
+          Enum.member?(numbers, cell)
+        end)
+      end)
+
+    possible_lines =
+      Enum.concat([
+        hits,
+        1..5 |> Enum.map(fn i -> Enum.map(hits, fn hit_row -> hit_row |> Enum.at(i - 1) end) end)
+      ])
+
+    possible_lines
+    |> Enum.map(fn line -> !Enum.member?(line, false) end)
+    |> Enum.member?(true)
+  end
 end
