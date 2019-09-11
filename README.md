@@ -1,21 +1,10 @@
 # Bingo
 
-**TODO: Add description**
+This is a test app that I created for a YouTube video.
 
-## Installation
+It has no tests, sorry Internet!
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `bingo` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:bingo, "~> 0.1.0"}
-  ]
-end
+To run it just:
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/bingo](https://hexdocs.pm/bingo).
-
+iex -S mix
+```
