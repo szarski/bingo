@@ -2,8 +2,10 @@ defmodule Player do
   require GenServer
   require Logger
 
-  def start_link(player_number) do
-    GenServer.start_link(__MODULE__, player_number, name: :"Player_#{player_number}")
+  def start_link(game_number, player_number) do
+    GenServer.start_link(__MODULE__, player_number,
+      name: :"Player_#{game_number}_#{player_number}"
+    )
   end
 
   def init(player_number) do

@@ -2,28 +2,32 @@ defmodule Game do
   require GenServer
   require Logger
 
-  def start_link do
-    GenServer.start_link(__MODULE__, %{}, name: :CurrentGame)
+  @players_count 5
+
+  def start_link(game_number) do
+    GenServer.start_link(__MODULE__, game_number, name: :"Game_#{game_number}")
   end
 
-  def init(_) do
-    Logger.info("Game starting!")
+  def init(game_number) do
+    Logger.info("Game #{game_number}: starting!")
 
     players =
-      1..15
+      1..@players_count
       |> Enum.map(fn player_number ->
-        {:ok, pid} = Player.start_link(player_number)
+        {:ok, pid} = Player.start_link(game_number, player_number)
         pid
       end)
 
+    :timer.sleep(4000)
+
     loop()
-    {:ok, %{players: players}}
+    {:ok, %{players: players, game_number: game_number}}
   end
 
-  def handle_info(:loop, %{players: players} = state) do
+  def handle_info(:loop, %{players: players, game_number: game_number} = state) do
     number = Enum.random(1..100)
 
-    Logger.info("The next number is #{number}")
+    Logger.info("Game #{game_number}: The next number is #{number}")
 
     players_left =
       players
@@ -33,7 +37,7 @@ defmodule Game do
       end)
 
     if Enum.count(players_left) < Enum.count(players) do
-      Logger.info("Players left: #{players_left |> Enum.count()}")
+      Logger.info("Game #{game_number}: Players left: #{players_left |> Enum.count()}")
       :timer.sleep(2000)
     end
 
@@ -43,6 +47,7 @@ defmodule Game do
         {:noreply, state |> Map.put(:players, players_left)}
 
       true ->
+        Process.send_after(:GameSet, :game_finished, 50)
         {:stop, :normal, state |> Map.put(:players, players_left)}
     end
   end
