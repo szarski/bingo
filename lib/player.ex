@@ -9,22 +9,19 @@ defmodule Player do
   end
 
   def init(player_number) do
-    board = Board.generate()
-    Logger.info("Player #{player_number} joined with board:#{board |> Board.inspect()}")
-    {:ok, %{player_number: player_number, numbers: [], board: board}}
+    {:ok, %{player_number: player_number, numbers: [], board: Board.generate()}}
   end
 
   def handle_call(
         {:number, number},
         _from,
-        %{player_number: player_number, numbers: old_numbers, board: board} = old_state
+        %{numbers: old_numbers, board: board} = old_state
       ) do
     numbers = old_numbers |> Enum.concat([number])
     state = old_state |> Map.put(:numbers, numbers)
 
     case board |> Board.bingo?(numbers) do
       true ->
-        Logger.info("Player #{player_number}: Bingo!")
         {:stop, :normal, true, state}
 
       false ->
@@ -33,6 +30,6 @@ defmodule Player do
   end
 
   def handle_call(:to_s, _from, %{player_number: player_number, board: board} = state) do
-    {:reply, "Player #{player_number}\n#{board |> Board.inspect()}", state}
+    {:reply, "Player #{player_number}\n#{board |> Board.to_s()}", state}
   end
 end

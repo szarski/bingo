@@ -24,7 +24,8 @@ defmodule GameSet do
         {:stop, :normal, new_state}
 
       %{games: games} = new_state ->
-        IEx.Helpers.clear
+        IEx.Helpers.clear()
+
         games
         |> Enum.sort()
         |> Enum.each(fn game ->

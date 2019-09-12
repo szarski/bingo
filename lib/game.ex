@@ -9,12 +9,7 @@ defmodule Game do
   end
 
   def init(game_number) do
-    players =
-      1..@players_count
-      |> Enum.map(fn player_number ->
-        {:ok, pid} = Player.start_link(game_number, player_number)
-        pid
-      end)
+    players = 1..@players_count |> Enum.map(&create_player(game_number, &1))
 
     {:ok, %{players: players, game_number: game_number, numbers: []}}
   end
@@ -22,27 +17,32 @@ defmodule Game do
   def handle_call(
         :play,
         _from,
-        %{players: players, game_number: game_number, numbers: numbers} = state
+        %{players: players, numbers: numbers} = state
       ) do
     number = Enum.random(1..100)
 
-    players_left =
-      players
-      |> Enum.filter(fn player ->
-        finished = GenServer.call(player, {:number, number})
-        !finished
-      end)
-
     new_state =
-      state |> Map.merge(%{players: players_left, numbers: numbers |> Enum.concat([number])})
+      state
+      |> Map.put(:players, players |> Enum.filter(&player_still_playing?(&1, number)))
+      |> Map.put(:numbers, numbers |> Enum.concat([number]))
 
-    case players_left do
-      [] ->
+    case new_state do
+      %{players: []} ->
         {:stop, :normal, true, new_state}
 
       _ ->
         {:reply, false, new_state}
     end
+  end
+
+  defp create_player(game_number, player_number) do
+    {:ok, pid} = Player.start_link(game_number, player_number)
+    pid
+  end
+
+  defp player_still_playing?(player, number) do
+    finished = GenServer.call(player, {:number, number})
+    !finished
   end
 
   def handle_call(

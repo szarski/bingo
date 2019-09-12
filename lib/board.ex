@@ -9,7 +9,7 @@ defmodule Board do
     end)
   end
 
-  def inspect(board) do
+  def to_s(board) do
     str =
       board
       |> Enum.map(&Kernel.inspect(&1, charlists: :as_lists))
