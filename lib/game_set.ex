@@ -15,44 +15,37 @@ defmodule GameSet do
     {:ok, state}
   end
 
-  def handle_info(:game_finished, %{games: games} = state) do
+  def handle_info(:game_finished, state) do
     Logger.warn("Game finishing.")
 
-    new_state =
-      start_games(
-        state
-        |> Map.put(:games, games |> Enum.filter(fn game -> Process.alive?(game) end))
-      )
-
-    case Enum.empty?(new_state |> Map.get(:games)) do
-      false ->
-        {:noreply, new_state}
-
-      true ->
+    case start_games(state) do
+      %{games: []} = new_state ->
         Logger.error("All games finished!")
         {:stop, :normal, new_state}
+
+      new_state ->
+        {:noreply, new_state}
     end
   end
 
-  defp start_games(%{games: games} = state) when length(games) >= @simultanous_games do
-    state
-  end
-
-  defp start_games(%{game_counter: counter} = state) when counter >= @max_games do
-    state
-  end
-
   defp start_games(%{games: games, game_counter: counter} = state) do
-    missing = @simultanous_games - length(games)
+    games_in_progress = games |> Enum.filter(fn game -> Process.alive?(game) end)
 
-    games =
-      1..missing
-      |> Enum.map(fn i ->
-        {:ok, pid} = Game.start_link(counter + i)
-        pid
-      end)
-      |> Enum.concat(games)
+    if length(games_in_progress) < @simultanous_games && counter < @max_games do
+      start_games(
+        state
+        |> Map.merge(%{
+          games: games_in_progress |> Enum.concat([start_game(counter + 1)]),
+          game_counter: counter + 1
+        })
+      )
+    else
+      state |> Map.put(:games, games_in_progress)
+    end
+  end
 
-    state |> Map.merge(%{games: games, game_counter: counter + missing})
+  defp start_game(number) do
+    {:ok, pid} = Game.start_link(number)
+    pid
   end
 end

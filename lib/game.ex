@@ -41,14 +41,14 @@ defmodule Game do
       :timer.sleep(2000)
     end
 
-    case Enum.empty?(players_left) do
-      false ->
-        loop()
-        {:noreply, state |> Map.put(:players, players_left)}
-
-      true ->
+    case players_left do
+      [] ->
         Process.send_after(:GameSet, :game_finished, 50)
         {:stop, :normal, state |> Map.put(:players, players_left)}
+
+      _ ->
+        loop()
+        {:noreply, state |> Map.put(:players, players_left)}
     end
   end
 
