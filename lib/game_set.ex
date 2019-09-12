@@ -12,20 +12,33 @@ defmodule GameSet do
   def init(_) do
     state = start_games(%{game_counter: 0, games: []})
 
+    loop()
+
     {:ok, state}
   end
 
-  def handle_info(:game_finished, state) do
-    Logger.warn("Game finishing.")
-
+  def handle_info(:loop, %{} = state) do
     case start_games(state) do
       %{games: []} = new_state ->
         Logger.error("All games finished!")
         {:stop, :normal, new_state}
 
-      new_state ->
+      %{games: games} = new_state ->
+        IEx.Helpers.clear
+        games
+        |> Enum.sort()
+        |> Enum.each(fn game ->
+          Logger.info(GenServer.call(game, :to_s))
+          GenServer.call(game, :play)
+        end)
+
+        loop()
         {:noreply, new_state}
     end
+  end
+
+  defp loop do
+    Process.send_after(self(), :loop, 50)
   end
 
   defp start_games(%{games: games, game_counter: counter} = state) do

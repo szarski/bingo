@@ -31,4 +31,8 @@ defmodule Player do
         {:reply, false, state}
     end
   end
+
+  def handle_call(:to_s, _from, %{player_number: player_number, board: board} = state) do
+    {:reply, "Player #{player_number}\n#{board |> Board.inspect()}", state}
+  end
 end

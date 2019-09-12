@@ -9,8 +9,6 @@ defmodule Game do
   end
 
   def init(game_number) do
-    Logger.info("Game #{game_number}: starting!")
-
     players =
       1..@players_count
       |> Enum.map(fn player_number ->
@@ -18,16 +16,15 @@ defmodule Game do
         pid
       end)
 
-    :timer.sleep(4000)
-
-    loop()
-    {:ok, %{players: players, game_number: game_number}}
+    {:ok, %{players: players, game_number: game_number, numbers: []}}
   end
 
-  def handle_info(:loop, %{players: players, game_number: game_number} = state) do
+  def handle_call(
+        :play,
+        _from,
+        %{players: players, game_number: game_number, numbers: numbers} = state
+      ) do
     number = Enum.random(1..100)
-
-    Logger.info("Game #{game_number}: The next number is #{number}")
 
     players_left =
       players
@@ -36,23 +33,45 @@ defmodule Game do
         !finished
       end)
 
-    if Enum.count(players_left) < Enum.count(players) do
-      Logger.info("Game #{game_number}: Players left: #{players_left |> Enum.count()}")
-      :timer.sleep(2000)
-    end
+    new_state =
+      state |> Map.merge(%{players: players_left, numbers: numbers |> Enum.concat([number])})
 
     case players_left do
       [] ->
-        Process.send_after(:GameSet, :game_finished, 50)
-        {:stop, :normal, state |> Map.put(:players, players_left)}
+        {:stop, :normal, true, new_state}
 
       _ ->
-        loop()
-        {:noreply, state |> Map.put(:players, players_left)}
+        {:reply, false, new_state}
     end
   end
 
-  defp loop do
-    Process.send_after(self(), :loop, 50)
+  def handle_call(
+        :to_s,
+        _from,
+        %{players: players, game_number: game_number, numbers: numbers} = state
+      ) do
+    player_information =
+      players
+      |> Enum.map(fn player -> GenServer.call(player, :to_s) end)
+      |> Enum.chunk_every(3)
+      |> Enum.map(fn elements ->
+        0..7
+        |> Enum.map(fn row_number ->
+          elements
+          |> Enum.map(fn element ->
+            element |> String.split("\n") |> Enum.at(row_number) |> String.pad_trailing(25)
+          end)
+          |> Enum.join("  ")
+        end)
+        |> Enum.join("\n")
+      end)
+      |> Enum.join("\n\n")
+
+    text =
+      "============== Game #{game_number} ==============\n\n" <>
+        "Numbers: #{numbers |> Enum.join(",")}\n" <>
+        "\n" <> player_information <> "\n-----------------------------------------------\n\n"
+
+    {:reply, text, state}
   end
 end
